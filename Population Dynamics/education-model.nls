@@ -1,0 +1,324 @@
+to education-model
+  ;education 0,学龄前儿童 1-幼儿园 2-小学 3-初中 4-中专 5-高中 6-大学专科 7-大学本科 8-专升本 9-硕士研究生 10-博士研究生
+  ;学校的类型 1幼儿园 2小学 3初中 4高中 5职业学校 （中专/大专） 6高等院校（本科、研究生、博士生）
+  ;升学规则：（1）购买房屋的agent优先选择学校，租赁房屋的后选择；（2）选择学校时的优先级：所居住房子拥有的学区（2000米以内）-同行政区的其他学校-其他行政区的有空位的学校
+  
+  ;确认每个学生是升高一年级、升学、或者
+  ask people with [status = 1] 
+  [
+    let updated 0 ;定义一个local variable，用来判断本年是否更新过学历信息
+    
+    ;升高一年级
+    if (edu-year < edu-year-required and updated = 0) [set edu-year edu-year + 1 set updated 1]
+    
+    ;判断是升学（status = 5）/步入社会（status = 6）
+    if (edu-year = edu-year-required and updated = 0)
+    [
+      ask my-students [die] ;清除与原学校的连线
+      set updated 1
+      (
+        ifelse 
+        education <= 3 [set status 5] ;学龄前儿童进入幼儿园/幼儿园升小学/小学升初中/初中升高中或中专 100%升学
+        education = 4 [ifelse random-float 1 <= 0.75 [set status 5][set status 3]] ;中专75%可能升大专/大学，25%可能性就业
+        education = 5 [ifelse random-float 1 <= 0.9 [set status 5][set status 3]];高中升大学或大专或就业
+        education = 6 [ifelse random-float 1 <= 0.05 [set status 5][set status 3]];大专生95%可能性就业，5%可能性升学
+        education = 7 or education = 8 [ifelse random-float 1 <= 0.1 [set status 5][set status 3]] ;本科生10%可能性升学，90%可能性就业
+        education = 9 [ifelse random-float 1 <= 0.1 [set status 5][set status 3]] ;硕士生10%可能性升学，90%可能性就业
+        ;education = 10 博士毕业后就业
+        [set status 3]
+      )
+    ]
+  ]
+  
+  ;升学的学生由于学习地改变，flexible trigger+1
+  ask people with [status = 5]
+  [
+    ask one-of people with [hhd = [hhd] of myself and relationship = 1][set flexible flexible + 1]
+  ]
+  ;处理需要升学的学生
+  higher-education
+  print "eduation-model finished"
+end
+
+to higher-education
+  ;Step1：家中有购房的学生升幼儿园/小学/初中
+  ask people with [status = 5 and count people with [hhd = [hhd] of myself and relationship = 1 and count in-purchase-neighbors = 1] = 1 and education <= 2]
+  [
+    let school1 nobody
+    (
+      ifelse
+      education = 0  ;学龄前儿童上幼儿园
+      [
+        set education 1 set edu-year-required 3 set edu-year 1 set status 1
+        
+        (
+          ifelse count schools in-radius 5 with [category = 1 and capacity > count in-student-neighbors] > 0
+          [set school1 one-of schools in-radius 5 with [category = 1 and capacity > count in-student-neighbors]]
+          count schools with [category = 1 and capacity > count in-student-neighbors and district = [district] of myself] > 0
+          [set school1 one-of schools with [category = 1 and capacity > count in-student-neighbors and district = [district] of myself]]
+          [set school1 min-one-of schools with [category = 1 and capacity > count in-student-neighbors] [distance myself]]
+        )
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+      education = 1 ;幼儿园升小学
+      [
+        set education 2 set edu-year-required 6 set edu-year 1 set status 1
+        (
+          ifelse count schools in-radius 5 with [category = 2 and capacity > count in-student-neighbors] > 0
+          [set school1 one-of schools in-radius 5 with [category = 2 and capacity > count in-student-neighbors]]
+          count schools with [category = 2 and capacity > count in-student-neighbors and district = [district] of myself] > 0
+          [set school1 one-of schools with [category = 2 and capacity > count in-student-neighbors and district = [district] of myself]]
+          [set school1 min-one-of schools with [category = 2 and capacity > count in-student-neighbors][distance myself]]
+        )
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+      ;education = 2 ;小学升初中
+      [
+        set education 3 set edu-year-required 3 set edu-year 1 set status 1
+        (
+          ifelse count schools in-radius 5 with [category = 3 and capacity > count in-student-neighbors] > 0
+          [set school1 one-of schools in-radius 5 with [category = 3 and capacity > count in-student-neighbors]]
+          count schools with [category = 3 and capacity > count in-student-neighbors and district = [district] of myself] > 0
+          [set school1 one-of schools with [category = 3 and capacity > count in-student-neighbors and district = [district] of myself]]
+          [set school1 min-one-of schools with [category = 3 and capacity > count in-student-neighbors][distance myself]]
+        )
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+    )
+  ]
+  
+  ;Step2：家中租房的学生升幼儿园/小学/初中
+  ask people with [status = 5 and education <= 2] ;租房及新迁入的小孩
+  [
+    let school1 nobody
+    (
+      ifelse
+      education = 0  ;学龄前儿童上幼儿园
+      [
+        set education 1 set edu-year-required 3 set edu-year 1 set status 1
+        
+        (
+          ifelse count schools in-radius 5 with [category = 1 and capacity > count in-student-neighbors] > 0
+          [set school1 one-of schools in-radius 5 with [category = 1 and capacity > count in-student-neighbors]]
+          count schools with [category = 1 and capacity > count in-student-neighbors and district = [district] of myself] > 0
+          [set school1 one-of schools with [category = 1 and capacity > count in-student-neighbors and district = [district] of myself]]
+          [set school1 min-one-of schools with [category = 1 and capacity > count in-student-neighbors] [distance myself]]
+        )
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+      education = 1 ;幼儿园升小学
+      [
+        set education 2 set edu-year-required 6 set edu-year 1 set status 1
+        (
+          ifelse count schools in-radius 5 with [category = 2 and capacity > count in-student-neighbors] > 0
+          [set school1 one-of schools in-radius 5 with [category = 2 and capacity > count in-student-neighbors]]
+          count schools with [category = 2 and capacity > count in-student-neighbors and district = [district] of myself] > 0
+          [set school1 one-of schools with [category = 2 and capacity > count in-student-neighbors and district = [district] of myself]]
+          [set school1 min-one-of schools with [category = 2 and capacity > count in-student-neighbors][distance myself]]
+        )
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+      ;education = 2 ;小学升初中
+      [
+        set education 3 set edu-year-required 3 set edu-year 1 set status 1
+        (
+          ifelse count schools in-radius 5 with [category = 3 and capacity > count in-student-neighbors] > 0
+          [set school1 one-of schools in-radius 5 with [category = 3 and capacity > count in-student-neighbors]]
+          count schools with [category = 3 and capacity > count in-student-neighbors and district = [district] of myself] > 0
+          [set school1 one-of schools with [category = 3 and capacity > count in-student-neighbors and district = [district] of myself]]
+          [set school1 min-one-of schools with [category = 3 and capacity > count in-student-neighbors][distance myself]]
+        )
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+    )
+  ]
+  
+  ;step 3: 模拟迁入但未完成购房租房人员的学生升幼儿园/小学/初中（随机）
+  ask people with [status = 5 and count people with [hhd = [hhd] of myself and relationship = 1 and count in-rent-neighbors = 0 and count in-purchase-neighbors = 0] = 1]
+  [
+    let school1 nobody
+    (
+      ifelse
+      education = 0  ;学龄前儿童上幼儿园
+      [
+        set education 1 set edu-year-required 3 set edu-year 1 set status 1
+        set school1 one-of schools with [category = 1 and capacity > count in-student-neighbors]
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+      education = 1 ;幼儿园升小学
+      [
+        set education 2 set edu-year-required 6 set edu-year 1 set status 1
+        set school1 one-of schools with [category = 2 and capacity > count in-student-neighbors]
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+      ;education = 2 ;小学升初中
+      [
+        set education 3 set edu-year-required 3 set edu-year 1 set status 1
+        set school1 one-of schools with [category = 2 and capacity > count in-student-neighbors]
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+    )
+  ]
+  
+  ;Step3：更新每个高中、职业院校、高等院校的probability
+  let school4 [] ;list of school with category = 4
+  let prob4 [];weights
+  ask schools with [category = 4][set school4 lput who school4 set prob4 lput capacity prob4]
+  py:set "school4" school4
+  py:set "prob4" prob4
+  let school5 [] ;list of school with category = 5
+  let prob5 [];weights
+  ask schools with [category = 5][set school5 lput who school5 set prob5 lput capacity prob5]
+  py:set "school5" school5
+  py:set "prob5" prob5
+  let school6 [] ;list of school with category = 4
+  let prob6 [];weights
+  ask schools with [category = 6][set school6 lput who school6 set prob6 lput capacity prob6]
+  py:set "school6" school6
+  py:set "prob6" prob6
+
+  
+  ;Step4：模拟初中之后的升学之后的升学
+  ask people with [status = 5 and education >= 3]
+  [
+    let school1 nobody
+    let p random-float 1
+    (
+      ifelse education = 3 ;初中升高中或中专
+      [
+        ifelse random-float 1 <= 0.5
+        [
+          ;50%的可能性升中专
+          set education 4 set edu-year-required 3 set edu-year 1 set status 1
+          (py:run
+            "import random"
+            "result = random.choices (school5, prob5)"
+          )
+          set school1 one-of schools with [who = item 0 py:runresult "result"]
+          ;set school1 one-of schools with [category = 5 and prob-low <= p and prob-high >= p]
+        ]
+        [
+          ;50%的可能性升高中
+          set education 5 set edu-year-required 3 set edu-year 1 set status 1
+          (py:run
+            "import random"
+            "result = random.choices (school4, prob4)"
+          )
+          set school1 school item 0 py:runresult "result"
+        ]
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+
+      ]
+      education = 4 ;中专升大专/本科
+      [
+        ifelse random-float 1 <= 0.13
+        [
+          ;13%的概率升本科
+          set education 7 set edu-year-required 3 set edu-year 1 set status 1
+          (py:run
+            "import random"
+            "result = random.choices (school6, prob6)"
+          )
+          set school1 school item 0 py:runresult "result"
+        ]
+        [
+          ;87%的概率升大专
+          set education 6 set edu-year-required 3 set edu-year 1 set status 1
+          set education 4 set edu-year-required 3 set edu-year 1 set status 1
+          (py:run
+            "import random"
+            "result = random.choices (school5, prob5)"
+          )
+          set school1 school item 0 py:runresult "result"
+          ;set school1 one-of schools with [category = 5 and prob-low <= p and prob-high >= p]
+        ]
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+      education = 5 ;高中升大学/大专
+      [
+        ifelse random-float 1 <= 0.5
+        [
+          ;50%的可能性升本科
+          set education 7 set edu-year-required 3 set edu-year 1 set status 1
+          (py:run
+            "import random"
+            "result = random.choices (school6, prob6)"
+          )
+          set school1 school item 0 py:runresult "result"
+        ]
+        [
+          ;50%的可能性升大专
+          set education 6 set edu-year-required 3 set edu-year 1 set status 1
+          (py:run
+            "import random"
+            "result = random.choices (school5, prob5)"
+          )
+          set school1 school item 0 py:runresult "result"
+        ]
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+      education = 6 ;大专升本科
+      [
+        set education 8 set edu-year-required 2 set edu-year 1 set status 1
+        (py:run
+          "import random"
+          "result = random.choices (school6, prob6)"
+        )
+        set school1 school item 0 py:runresult "result"
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+      
+      education = 7 or education = 8 ;本科/专升本升硕士研究生
+      [
+        set education 9 set edu-year-required 3 set edu-year 1 set status 1
+        (py:run
+            "import random"
+            "result = random.choices (school6, prob6)"
+          )
+          set school1 one-of schools with [who = item 0 py:runresult "result"]
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+      
+      ;education = 9 硕士升博士
+      [
+        set education 10 set edu-year-required 4 set edu-year 1 set status 1
+        (py:run
+            "import random"
+            "result = random.choices (school6, prob6)"
+          )
+          set school1 one-of schools with [who = item 0 py:runresult "result"]
+        create-student-with school1
+        set wslong [long] of school1
+        set wslat [lat] of school1
+      ]
+    )
+  ]
+end

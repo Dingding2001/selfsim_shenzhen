@@ -1,0 +1,781 @@
+to water-consumption-model
+  update-appliance-needed
+  calculate-water
+  update-behavior-appliance
+end
+
+to calculate-water
+  
+end
+
+to update-one-hehavior-app
+  ;This function is designed to predict behaviors and ownership of appliances of a household just completed house moving
+  
+  ;bathing-behavior
+  set bath-style item 0 predict-bathing-behavior
+  set Bath-fre-winter item 1 predict-bathing-behavior
+  set Bath-fre-spring item 2 predict-bathing-behavior
+  set Bath-fre-summer item 3 predict-bathing-behavior
+  set Bath-time-winter item 4 predict-bathing-behavior
+  set Bath-time-spring item 5 predict-bathing-behavior
+  set Bath-time-summer item 6 predict-bathing-behavior
+  set Adj-temp item 7 predict-bathing-behavior
+  let type-Water-heater item 1 predict-bathing-appliances
+   ifelse type-Water-heater = 6 [set Water-insulation []] [set Water-insulation item 8 predict-bathing-behavior]
+  ifelse Electric-Footbath = 0 [
+    set footbath-fre-winter []
+    set footbath-fre-spring []
+    set footbath-fre-summer []
+  ]
+  [ set footbath-fre-winter item 9 predict-bathing-behavior
+    set footbath-fre-spring item 10 predict-bathing-behavior
+    set footbath-fre-summer item 11 predict-bathing-behavior
+  ]
+    
+  ;cooking related behaviors and applicances
+  set cook-fire-fre item 0 predict-cooking-behavior
+  set Soup-fre item 1 predict-cooking-behavior
+  if cook-fire-fre != 8 or Soup-fre != 8
+  [
+    set Cook-Energy item 2  predict-cooking-behavior
+    set Gasstove-time item 3  predict-cooking-behavior
+    set bread-machine-fre item 4  predict-cooking-behavior
+    set ele-oven-fre item 5  predict-cooking-behavior
+    set soymilk-fre item 6  predict-cooking-behavior
+    set ele-stewpot-fre item 7  predict-cooking-behavior
+    set induction-fre item 8  predict-cooking-behavior
+    set gasstove-fre item 9  predict-cooking-behavior
+    set pressure-fre item 10  predict-cooking-behavior
+    set rice-fre item 11  predict-cooking-behavior
+    set ele-pan-fre item 12  predict-cooking-behavior
+    set sterilizer-fre item 13  predict-cooking-behavior
+    set dishes-num item 14  predict-cooking-behavior
+  ]
+  
+  ;cleaning related behaviors and applicances
+  if cook-fire-fre != 8 or Soup-fre != 8
+   [
+      set washes-avenum item 0 predict-cleaning-behavior
+      set wash-dish-method item 1 predict-cleaning-behavior  
+      set Wash-hotwater item 2 predict-cleaning-behavior      
+      ifelse wash-dish-method = 1 
+      [set wash-time item 3 predict-cleaning-behavior ] 
+      [set wash-cycle item 4 predict-cleaning-behavior] 
+      
+      set Clean-method item 5 predict-cleaning-behavior   
+      set Sweep-fre item 6 predict-cleaning-behavior 
+      set Mop-fre item 7 predict-cleaning-behavior   
+      set wash-method item 8 predict-cleaning-behavior 
+     (ifelse 
+      wash-method = 1 [
+      set handwash-fre-winter item 9 predict-cleaning-behavior  
+      set handwash-fre-spring item 10 predict-cleaning-behavior  
+      set handwash-fre-summer item 11 predict-cleaning-behavior   
+      ]
+      wash-method = 2[
+      set washmachine-fre-winter item 12 predict-cleaning-behavior     
+      set washmachine-fre-spring item 13 predict-cleaning-behavior    
+      set washmachine-fre-summer item 14 predict-cleaning-behavior     
+      ]
+     [
+      set handwash-fre-winter item 9 predict-cleaning-behavior 
+      set handwash-fre-spring item 10 predict-cleaning-behavior 
+      set handwash-fre-summer item 11 predict-cleaning-behavior 
+      set washmachine-fre-winter item 12 predict-cleaning-behavior 
+      set washmachine-fre-spring item 13 predict-cleaning-behavior 
+      set washmachine-fre-summer item 14 predict-cleaning-behavior 
+     ])
+    
+     if wash-method != 2 
+      [set Rinse-method item 15 predict-cleaning-behavior]   
+      
+     ifelse Rinse-method = 1 
+      [set laundry-time item 16 predict-cleaning-behavior]   
+      [set Num-clothes-rinsed item 17 predict-cleaning-behavior]    
+    
+     set hotwater-laundry item 18 predict-cleaning-behavior
+     set Dry-sterilize item 19 predict-cleaning-behavior   
+    ]
+  
+  ;cooking-related behaviors and applicances
+  ;set fre-cook predict-fre-cook
+  ;let num-bread predict-bread ifelse num-bread = 0 [set bread []][if length bread = 0 [set bread (list 6 0)]]
+  ;let num-induction predict-induction ifelse num-induction = 0 [set induction []][if length induction = 0 [set induction (list 6 0)]]
+  ;let num-milk predict-milk ifelse num-milk = 0 [set milk []][if length milk = 0 [set milk (list 6 0)]]
+  ;let num-pot predict-pot ifelse num-pot = 0 [set pot []][if length pot = 0 [set pot (list 6 0)]]
+  ;let num-baking predict-baking ifelse num-baking = 0 [set baking []][if length baking = 0 [set baking (list 6 0)]]
+  ;let num-pressure predict-pressure ifelse num-pressure = 0 [set pressure []][if length pressure = 0 [set baking (list 8 0)]]
+  ;let num-rice predict-rice ifelse num-rice = 0 [set rice []][if length rice = 0 [set rice (list 10 0)]]
+  ;let num-microwave predict-microwave ifelse num-microwave = 0 [set microwave []][if length microwave = 0 [set microwave (list 10 0)]]
+  
+end
+
+to update-appliance-needed
+  ask people with [relationship = 1]
+  [
+    let trigger-threshold 5
+    if appliance-trigger >= trigger-threshold
+    [
+   
+      ;bathing-appliances
+      if length Electric-Footbath = 0 [let num-Electric-Footbath-needed item 0 predict-bathing-appliances if num-Electric-Footbath-needed = 1 [set Electric-Footbath list 6 0]]
+      if length Water-heater = 0 [let type-Water-heater-needed item 1 predict-bathing-appliances 
+        if type-Water-heater-needed = 1 [set Water-heater list 1 6 0]
+        if type-Water-heater-needed = 2 [set Water-heater list 2 6 0]
+        if type-Water-heater-needed = 3 [set Water-heater list 3 8 0]
+        if type-Water-heater-needed = 4 [set Water-heater list 4 15 0]
+        if type-Water-heater-needed = 5 [set Water-heater list 5 15 0]
+        if type-Water-heater-needed = 6 [set Water-heater []]
+        if type-Water-heater-needed = 7 [set Water-heater list 7 6 0]
+      ]
+      if length showerhead = 0 [let num-showerhead-needed item 2 predict-bathing-appliances 
+        if num-showerhead-needed = 1 [set showerhead list 1 10 0]
+        if num-showerhead-needed = 2 [set showerhead list 2 10 0]
+        if num-showerhead-needed = 3 [set showerhead list 3 10 0]
+      ]
+      set thermostatic item 3 predict-bathing-appliances
+      if length Faucet = 0 [let num-Faucet-needed item 4 predict-bathing-appliances 
+        if num-Faucet-needed = 1 [set Faucet list 1 5 0]
+        if num-Faucet-needed = 2 [set Faucet list 2 5 0]
+        if num-Faucet-needed = 3 [set Faucet list 3 5 0]
+      ]
+      
+      ;cleaning-appliances
+      if length Dishwasher = 0 [let num-Dishwasher-needed item 0 predict-cleaning-appliances if num-Dishwasher-needed = 1 [set Dishwasher list 10 0]]
+      if length sterilizer = 0 [let num-sterilizer-needed item 1 predict-cleaning-appliances if num-sterilizer-needed = 1 [set sterilizer list 8 0]]
+      if length sweeping-robot = 0 [let num-sweeping-robot-needed item 2 predict-cleaning-appliances if num-sweeping-robot-needed = 1 [set sweeping-robot list 10 0]]
+      if length Electric-mop = 0 [let num-Electric-mop-needed item 3 predict-cleaning-appliances if num-Electric-mop-needed = 1 [set Electric-mop list 10 0]]
+      if length Intelligent-Toilet = 0 [let num-Intelligent-Toilet-needed item 4 predict-cleaning-appliances if num-Intelligent-Toilet-needed = 1 [set Intelligent-Toilet list 10 0]]
+      if length Washing-machine = 0 [let num-Washing-machine-needed item 5 predict-cleaning-appliances 
+        if num-Washing-machine-needed = 1 [set Washing-machine list 1 10 0]
+        if num-Washing-machine-needed = 2 [set Washing-machine list 2 10 0]
+        if num-Washing-machine-needed = 3 [set Washing-machine list 3 8 0]
+        if num-Washing-machine-needed = 4 [set Washing-machine []]
+      ]
+      if length Washing-machine > 0 [set Dry-or-sterilize item 6 predict-cleaning-appliances]
+    
+      ;cooking-appliances
+      if length Terminal-water = 0 [let num-Terminal-water-needed item 4 predict-cooking-appliances if num-Terminal-water-needed = 1 [set Terminal-water list 5 0]]
+      if length Kitchen-water-heat = 0 [let num-Kitchen-water-heat-needed item 5 predict-cooking-appliances if num-Kitchen-water-heat-needed = 1 [set Kitchen-water-heat list 8 0]]
+      
+      ;HVAC-appliances
+      if length radiator-bag = 0 [let num-radiator-bag-needed item 6 predict-HVAC-appliances if num-radiator-bag-needed = 1 [set radiator-bag list 2 0]]
+     
+      set appliance-trigger 0
+    ]
+  ]
+end
+
+to update-behavior-appliance
+  ;Check the lifespan and age of appliances and predict whether
+  ;air conditioner
+  let min-range min [hhd] of people
+  let max-range min-range + 10  
+  let max-id max [hhd] of people
+  while [min-range <= max-id]
+  [
+    ask people with [hhd >= min-range and hhd < max-range and relationship = 1]
+    [
+      print min-range
+    if relationship = 1
+    [
+      let num-air length air
+      while [num-air > 0]
+      [
+        let A1 item (num-air - 1) air
+        let lifespan1 item 0 A1 let age1 item 1 A1
+        set age1 age1 + 1
+        
+        ifelse lifespan1 = A1 
+        [
+          ;if the air conditioner is at the end of usage
+          ifelse count in-rent-neighbors = 1 
+          [
+            ;This family's house is rented, and the landlord will replace it with a new air conditioner.
+            set air replace-item (num-air - 1) air (list lifespan1 1)
+          ] 
+          [
+            let num-AC-needed 0
+            ;This family's house is bought. First predict the number of air conditioners this family needs at this time.
+            set num-AC-needed predict-air
+            ifelse num-AC-needed < length air 
+            [set air remove-item (num-air - 1) air] ;if the number of air conditioners needed is less than the household has, it will not purchase a new one
+            [set air replace-item (num-air - 1) air (list lifespan1 1)] ;if the number of air conditioners needed is not less than the household has, it will purchase a new one
+          ]
+       ]
+       [
+          ;update the age of the air conditioner
+          set air replace-item (num-air - 1) air (list lifespan1 age1)
+        ]
+        set num-air num-air - 1 
+      ]
+    ]
+    
+    ;AC related behaviors
+
+    set month-cool predict-month-cool
+    set weekday-hour predict-cool-hr-weekday
+    set weekend-hour predict-cool-hr-weekend
+    set daytime-temp-air predict-daytime-temp-air
+    set night-temp-air predict-night-temp-air
+    
+    
+    ;cooking frequency
+    set fre-cook predict-fre-cook
+    
+   ;bread machine
+    if length bread > 0
+    [
+      let lifespan1 item 0 bread let age1 item 1 bread
+      set age1 age1 + 1
+      ifelse lifespan1 = age1
+      [
+        let num-bread-needed predict-bread
+        ifelse num-bread-needed = 1 [set bread replace-item 1 bread 0][set bread []]
+      ]
+      [
+        set bread replace-item 1 bread age1
+      ]
+    ]
+    
+    ;induction
+    if length induction > 0
+    [
+      let lifespan1 item 0 induction let age1 item 1 induction
+      set age1 age1 + 1
+      ifelse lifespan1 = age1
+      [
+        let num-induction-needed predict-induction
+        ifelse num-induction-needed = 1 [set induction replace-item 1 induction 0][set induction []]
+      ]
+      [
+        set induction replace-item 1 induction age1
+      ]
+    ]
+    
+    ;rice
+    if length rice > 0
+    [
+      let lifespan1 item 0 rice let age1 item 1 rice
+      set age1 age1 + 1
+      ifelse lifespan1 = age1
+      [
+        let num-rice-needed predict-rice
+        ifelse num-rice-needed = 1 [set rice replace-item 1 rice 0][set rice []]
+      ]
+      [
+        set rice replace-item 1 rice age1
+      ]
+    ]
+    
+    ;pressure
+    if length pressure > 0
+    [
+      let lifespan1 item 0 pressure let age1 item 1 pressure
+      set age1 age1 + 1
+      ifelse lifespan1 = age1
+      [
+        let num-pressure-needed predict-pressure
+        ifelse num-pressure-needed = 1 [set pressure replace-item 1 pressure 0][set pressure []]
+      ]
+      [
+        set pressure replace-item 1 pressure age1
+      ]
+    ]
+    
+    ;baking
+    if length baking > 0
+    [
+      let lifespan1 item 0 baking let age1 item 1 baking
+      set age1 age1 + 1
+      ifelse lifespan1 = age1
+      [
+        let num-baking-needed predict-baking
+        ifelse num-baking-needed = 1 [set baking replace-item 1 baking 0][set baking []]
+      ]
+      [
+        set baking replace-item 1 baking age1
+      ]
+    ]
+    
+    ;pot
+    if length pot > 0
+    [
+      let lifespan1 item 0 pot let age1 item 1 pot
+      set age1 age1 + 1
+      ifelse lifespan1 = age1
+      [
+        let num-pot-needed predict-pot
+        ifelse num-pot-needed = 1 [set pot replace-item 1 pot 0][set pot []]
+      ]
+      [
+        set pot replace-item 1 pot age1
+      ]
+    ]
+    
+    ;milk
+    if length milk > 0
+    [
+      let lifespan1 item 0 milk let age1 item 1 milk
+      set age1 age1 + 1
+      ifelse lifespan1 = age1
+      [
+        let num-milk-needed predict-milk
+        ifelse num-milk-needed = 1 [set rice replace-item 1 milk 0][set milk []]
+      ]
+      [
+        set milk replace-item 1 milk age1 
+      ]
+    ]
+    
+    ;microwave
+    if length microwave > 0
+    [
+      let lifespan1 item 0 microwave let age1 item 1 microwave
+      set age1 age1 + 1
+      ifelse lifespan1 = age1
+      [
+        let num-microwave-needed predict-microwave
+        ifelse num-microwave-needed = 1 [set microwave replace-item 1 microwave 0][set microwave []]
+      ]
+      [
+        set microwave replace-item 1 microwave age1 
+      ]
+    ]
+    
+    ;LED
+    let lifespan1 item 0 LED let age1 item 1 LED
+    set age1 age1 + 1
+    ifelse lifespan1 = age1
+    [
+      let prop-LED predict-LED
+      set LED (list prop-LED lifespan1 0)
+    ]
+    [
+      set LED replace-item 2 LED age1
+      ]
+  set min-range min-range + 10
+  set max-range max-range + 10
+  ]
+  ]
+  print 1
+end
+
+to-report predict-infrastructures
+  py:set "gender" gender
+  py:set "age" age-group
+  py:Set "education" education-level
+  py:Set "income" income-group
+  py:set "status" status
+  py:Set "num_family" number
+  py:set "num_child" count people with [hhd = [hhd] of myself and age < 18]
+  py:set "num_old" count people with [hhd = [hhd] of myself and status = 4]
+  py:set "household_income" hhd-income-group
+  (py:run
+    "import numpy as np"
+    "from sklearn.ensemble import RandomForestClassifier"
+    "seeds = 1"
+    "trees = 100"
+    "name1_data = pd.read_csv('Water Energy Consumption/infrastructures.csv')"
+    "features = name1_data[['gender', 'age', 'permonth_income', 'education', 'status','family_member', 'minor', 'retired','hhd_income']]"
+    "second_level_labels = name1_data[['drinking_water','hotwater','piped natural gas','winterheat','summercool']]"
+    "rf_second_level = RandomForestClassifier(n_estimators=trees, random_state=seeds)"
+    "rf_second_level.fit(features, second_level_labels.values.ravel())"
+    "new_data = pd.DataFrame([[gender, age, income, education, status, num_family, num_child, num_old, household_income]],columns=features.columns)"
+    "Y = rf_second_level.predict(new_data)"
+    "drinkingwater = Y[0, 0]"
+    "hotwater = Y[0, 1]"
+    "drinkingwater = Y[0, 2]"
+    "piped-natural-gas = Y[0, 3]"
+    "summercool = Y[0, 4]"
+  )
+  let drinkingwater py:runresult "drinkingwater"       
+  let hotwater py:runresult "hotwater"            
+  let piped-natural-gas py:runresult "piped-natural-gas"  
+  let winterheat py:runresult "winterheat"         
+  let summercool py:runresult "summercool" 
+  let resultlist (list drinkingwater hotwater piped-natural-gas winterheat summercool)
+  report resultlist
+end
+
+to-report predict-bathing-appliances
+  py:set "gender" gender
+  py:set "age" age-group
+  py:Set "education" education-level
+  py:Set "income" income-group
+  py:set "status" status
+  py:Set "num_family" number
+  py:set "num_child" count people with [hhd = [hhd] of myself and age < 18]
+  py:set "num_old" count people with [hhd = [hhd] of myself and status = 4]
+  py:set "household_income" hhd-income-group
+  (py:run
+    "import numpy as np"
+    "from sklearn.ensemble import RandomForestClassifier"
+    "seeds = 1"
+    "trees = 100"
+    "name1_data = pd.read_csv('Water Energy Consumption/bathing appliances.csv')"
+    "features = name1_data[['gender', 'age', 'permonth_income', 'education', 'status','family_member', 'minor', 'retired','hhd_income']]"
+    "second_level_labels = name1_data[['Electric Footbath','Water heater model','showerhead','thermostatic function','Faucet type']]"
+    "rf_second_level = RandomForestClassifier(n_estimators=trees, random_state=seeds)"
+    "rf_second_level.fit(features, second_level_labels.values.ravel())"
+    "new_data = pd.DataFrame([[gender, age, income, education, status, num_family, num_child, num_old, household_income]],columns=features.columns)"
+    "Y = rf_second_level.predict(new_data)"
+    "Electric-Footbath = Y[0, 0]"
+    "Water-heater = Y[0, 1]"
+    "showerhead = Y[0, 2]"
+    "thermostatic = Y[0, 3]"
+    "Faucet = Y[0, 4]"
+  )
+  let Electric-Footbath py:runresult "Electric-Footbath"       
+  let Water-heater py:runresult "Water-heater"            
+  let showerhead py:runresult "showerhead"  
+  let thermostatic py:runresult "thermostatic"         
+  let Faucet py:runresult "Faucet" 
+  let resultlist (list Electric-Footbath Water-heater showerhead thermostatic Faucet)
+  report resultlist
+end
+
+to-report predict-cleaning-appliances
+  py:set "gender" gender
+  py:set "age" age-group
+  py:Set "education" education-level
+  py:Set "income" income-group
+  py:set "status" status
+  py:Set "num_family" number
+  py:set "num_child" count people with [hhd = [hhd] of myself and age < 18]
+  py:set "num_old" count people with [hhd = [hhd] of myself and status = 4]
+  py:set "household_income" hhd-income-group
+  (py:run
+    "import numpy as np"
+    "from sklearn.ensemble import RandomForestClassifier"
+    "seeds = 1"
+    "trees = 100"
+    "name1_data = pd.read_csv('Water Energy Consumption/cleaning appliances.csv')"
+    "features = name1_data[['gender', 'age', 'permonth_income', 'education', 'status','family_member', 'minor', 'retired','hhd_income']]"
+    "second_level_labels = name1_data[['Dishwasher','sterilizer','sweeping robot','Electric mop','Intelligent Toilet','Washing machine model','Dryingorsterilizing']]"
+    "rf_second_level = RandomForestClassifier(n_estimators=trees, random_state=seeds)"
+    "rf_second_level.fit(features, second_level_labels.values.ravel())"
+    "new_data = pd.DataFrame([[gender, age, income, education, status, num_family, num_child, num_old, household_income]],columns=features.columns)"
+    "Y = rf_second_level.predict(new_data)"
+    "Dishwasher = Y[0, 0]"
+    "sterilizer = Y[0, 1]"
+    "sweeping-robot = Y[0, 2]"
+    "Electric-mop = Y[0, 3]"
+    "Intelligent-Toilet = Y[0, 4]"
+    "Washing-machine = Y[0, 5]"
+    "Dry-or-sterilize = Y[0, 6]"
+  )
+  let Dishwasher py:runresult "Dishwasher"       
+  let sterilizer py:runresult "sterilizer"            
+  let sweeping-robot py:runresult "sweeping-robot"  
+  let Electric-mop py:runresult "Electric-mop"         
+  let Intelligent-Toilet py:runresult "Intelligent-Toilet" 
+  let Washing-machine py:runresult "Washing-machine"
+  let Dry-or-sterilize py:runresult "Dry-or-sterilize"
+  let resultlist (list Dishwasher sterilizer sweeping-robot Electric-mop Intelligent-Toilet Washing-machine Dry-or-sterilize)
+  report resultlist
+end
+
+to-report predict-cooking-appliances
+  py:set "gender" gender
+  py:set "age" age-group
+  py:Set "education" education-level
+  py:Set "income" income-group
+  py:set "status" status
+  py:Set "num_family" number
+  py:set "num_child" count people with [hhd = [hhd] of myself and age < 18]
+  py:set "num_old" count people with [hhd = [hhd] of myself and status = 4]
+  py:set "household_income" hhd-income-group
+  (py:run
+    "import numpy as np"
+    "from sklearn.ensemble import RandomForestClassifier"
+    "seeds = 1"
+    "trees = 100"
+    "name1_data = pd.read_csv('Water Energy Consumption/cleaning appliances.csv')"
+    "features = name1_data[['gender', 'age', 'permonth_income', 'education', 'status','family_member', 'minor', 'retired','hhd_income']]"
+    "second_level_labels = name1_data[['pressure pot','microwave oven','Electric crockpot orsoymilk maker orpie pan','Electric oven ortoaster orcoffee maker','Terminal water purifier','Kitchen water heater']]"
+    "rf_second_level = RandomForestClassifier(n_estimators=trees, random_state=seeds)"
+    "rf_second_level.fit(features, second_level_labels.values.ravel())"
+    "new_data = pd.DataFrame([[gender, age, income, education, status, num_family, num_child, num_old, household_income]],columns=features.columns)"
+    "Y = rf_second_level.predict(new_data)"
+    "pressure = Y[0, 0]"
+    "microwave-oven = Y[0, 1]"
+    "soymilk = Y[0, 2]"
+    "Ele-oven = Y[0, 3]"
+    "Terminal-water = Y[0, 4]"
+    "Kitchen-water-heat = Y[0, 5]"
+  )
+  let pressure py:runresult "pressure"       
+  let microwave-oven py:runresult "microwave-oven"            
+  let soymilk py:runresult "soymilk"         
+  let Ele-oven py:runresult "Ele-oven" 
+  let Terminal-water py:runresult "Terminal-water"
+  let Kitchen-water-heat py:runresult "Kitchen-water-heat"  
+  let resultlist (list pressure microwave-oven soymilk Ele-oven Terminal-water Kitchen-water-heat)
+  report resultlist
+end
+
+to-report predict-HVAC-appliances
+  py:set "gender" gender
+  py:set "age" age-group
+  py:Set "education" education-level
+  py:Set "income" income-group
+  py:set "status" status
+  py:Set "num_family" number
+  py:set "num_child" count people with [hhd = [hhd] of myself and age < 18]
+  py:set "num_old" count people with [hhd = [hhd] of myself and status = 4]
+  py:set "household_income" hhd-income-group
+  (py:run
+    "import numpy as np"
+    "from sklearn.ensemble import RandomForestClassifier"
+    "seeds = 1"
+    "trees = 100"
+    "name1_data = pd.read_csv('Water Energy Consumption/HVAC appliances.csv')"
+    "features = name1_data[['gender', 'age', 'permonth_income', 'education', 'status','family_member', 'minor', 'retired','hhd_income']]"
+    "second_level_labels = name1_data[['single-unit air conditioner-winter','central air conditioning(winter)','Air source heat pump heating','chimney','oil lamp','electric blanket','radiator bag','single-unit air conditioner-summer','central air conditioning-summer','air conditioning fan','electric fan']]"
+    "rf_second_level = RandomForestClassifier(n_estimators=trees, random_state=seeds)"
+    "rf_second_level.fit(features, second_level_labels.values.ravel())"
+    "new_data = pd.DataFrame([[gender, age, income, education, status, num_family, num_child, num_old, household_income]],columns=features.columns)"
+    "Y = rf_second_level.predict(new_data)"
+    "single-airconditioner-winter = Y[0, 0]"
+    "central-airconditioner-winter = Y[0, 1]"
+    "heatpump = Y[0, 2]"
+    "chimney = Y[0, 3]"
+    "oillamp = Y[0, 4]"
+    "ele-blanket = Y[0, 5]"
+    "radiator-bag = Y[0, 6]"
+    "single-airconditioner-summer = Y[0, 7]"
+    "central-airconditioner-summer = Y[0, 8]"
+    "air-fan = Y[0, 9]"
+    "ele-fan = Y[0, 10]"
+  )
+  let single-airconditioner-winter py:runresult "single-airconditioner-winter"       
+  let central-airconditioner-winter py:runresult "central-airconditioner-winter"            
+  let heatpump py:runresult "heatpump"         
+  let chimney py:runresult "chimney" 
+  let oillamp py:runresult "oillamp"
+  let ele-blanket py:runresult "ele-blanket"  
+  let radiator-bag py:runresult "radiator-bag"            
+  let single-airconditioner-summer py:runresult "single-airconditioner-summer"         
+  let central-airconditioner-summer py:runresult "central-airconditioner-summer" 
+  let air-fan py:runresult "air-fan"
+  let ele-fan py:runresult "ele-fan"  
+  let resultlist (list single-airconditioner-winter central-airconditioner-winter heatpump chimney oillamp ele-blanket radiator-bag single-airconditioner-summer central-airconditioner-summer air-fan ele-fan)
+  report resultlist
+end
+
+to-report predict-bathing-behavior
+  py:set "gender" gender
+  py:set "age" age-group
+  py:Set "education" education-level
+  py:Set "income" income-group
+  py:set "status" status
+  py:Set "num_family" number
+  py:set "num_child" count people with [hhd = [hhd] of myself and age < 18]
+  py:set "num_old" count people with [hhd = [hhd] of myself and status = 4]
+  py:set "household_income" hhd-income-group
+  (py:run
+    "import numpy as np"
+    "from sklearn.ensemble import RandomForestClassifier"
+    "seeds = 1"
+    "trees = 100"
+    "name1_data = pd.read_csv('Water Energy Consumption/bathing behavior.csv')"
+    "features = name1_data[['gender', 'age', 'permonth_income', 'education', 'status','family_member', 'minor', 'retired','hhd_income']]"
+    "second_level_labels = name1_data[['Bathing style','Bathing frequency in winter','Bathing frequency in spring','Bathing frequency in summer','Bathing time in winter','Bathing time in spring','Bathing time in summer','Adjustingtemperature','Water heater insulation','Frequencyof foot baths in winter','Frequencyof foot baths in spring','Frequencyof foot baths in summer']]"
+    "rf_second_level = RandomForestClassifier(n_estimators=trees, random_state=seeds)"
+    "rf_second_level.fit(features, second_level_labels.values.ravel())"
+    "new_data = pd.DataFrame([[gender, age, income, education, status, num_family, num_child, num_old, household_income]],columns=features.columns)"
+    "Y = rf_second_level.predict(new_data)"
+    "bath-style = Y[0, 0]"
+    "Bath-fre-winter = Y[0, 1]"
+    "Bath-fre-spring = Y[0, 2]"
+    "Bath-fre-summer = Y[0, 3]"
+    "Bath-time-winter = Y[0, 4]"
+    "Bath-time-spring = Y[0, 5]"
+    "Bath-time-summer = Y[0, 6]"
+    "Adj-temp = Y[0, 7]"
+    "Water-insulation = Y[0, 8]"
+    "footbath-fre-winter = Y[0, 9]"
+    "footbath-fre-spring = Y[0, 10]"
+    "footbath-fre-summer = Y[0, 11]"
+  )
+  let bath-style py:runresult "bath-style"       
+  let Bath-fre-winter py:runresult "Bath-fre-winter"            
+  let Bath-fre-spring py:runresult "Bath-fre-spring"         
+  let Bath-fre-summer py:runresult "Bath-fre-summer" 
+  let Bath-time-winter py:runresult "Bath-time-winter"
+  let Bath-time-spring py:runresult "Bath-time-spring"
+  let Bath-time-summer py:runresult "Bath-time-summer"       
+  let Adj-temp py:runresult "Adj-temp"            
+  let Water-insulation py:runresult "Water-insulation"         
+  let footbath-fre-winter py:runresult "footbath-fre-winter" 
+  let footbath-fre-spring py:runresult "footbath-fre-spring"
+  let footbath-fre-summer py:runresult "footbath-fre-summer"    
+  let resultlist (list bath-style Bath-fre-winter Bath-fre-spring Bath-fre-summer Bath-time-winter Bath-time-spring Bath-time-summer Adj-temp Water-insulation footbath-fre-winter footbath-fre-spring footbath-fre-summer)
+  report resultlist
+end
+
+to-report predict-cooking-behavior
+  py:set "gender" gender
+  py:set "age" age-group
+  py:Set "education" education-level
+  py:Set "income" income-group
+  py:set "status" status
+  py:Set "num_family" number
+  py:set "num_child" count people with [hhd = [hhd] of myself and age < 18]
+  py:set "num_old" count people with [hhd = [hhd] of myself and status = 4]
+  py:set "household_income" hhd-income-group
+  (py:run
+    "import numpy as np"
+    "from sklearn.ensemble import RandomForestClassifier"
+    "seeds = 1"
+    "trees = 100"
+    "name1_data = pd.read_csv('Water Energy Consumption/cooking behavior.csv')"
+    "features = name1_data[['gender', 'age', 'permonth_income', 'education', 'status','family_member', 'minor', 'retired','hhd_income']]"
+    "second_level_labels = name1_data[['Frequencyof cooking on fire','Frequencyof Soup','Cooking Energy','Time for Gas Stove','bread machine','electric oven','soy milk','electric stew pot','induction cooktop','gas stove','electric pressure cooker','rice cooker','electric baking pan','sterilizer','Number of dishes']]"
+    "rf_second_level = RandomForestClassifier(n_estimators=trees, random_state=seeds)"
+    "rf_second_level.fit(features, second_level_labels.values.ravel())"
+    "new_data = pd.DataFrame([[gender, age, income, education, status, num_family, num_child, num_old, household_income]],columns=features.columns)"
+    "Y = rf_second_level.predict(new_data)"
+    "cook-fire-fre = Y[0, 0]"
+    "Soup-fre = Y[0, 1]"
+    "Cook-Energy = Y[0, 2]"
+    "Gasstove-time = Y[0, 3]"
+    "bread-machine-fre = Y[0, 4]"
+    "ele-oven-fre = Y[0, 5]"
+    "soymilk-fre = Y[0, 6]"
+    "ele-stewpot-fre = Y[0, 7]"
+    "induction-fre = Y[0, 8]"
+    "gasstove-fre = Y[0, 9]"
+    "pressure-fre = Y[0, 10]"
+    "rice-fre = Y[0, 11]"
+    "ele-pan-fre = Y[0, 12]"
+    "sterilizer-fre = Y[0, 13]"
+    "dishes-num = Y[0, 14]"
+  )
+  let cook-fire-fre py:runresult "cook-fire-fre"       
+  let Soup-fre py:runresult "Soup-fre"            
+  let Cook-Energy py:runresult "Cook-Energy"         
+  let Gasstove-time py:runresult "Gasstove-time" 
+  let bread-machine-fre py:runresult "bread-machine-fre"
+  let ele-oven-fre py:runresult "ele-oven-fre"
+  let soymilk-fre py:runresult "soymilk-fre"       
+  let ele-stewpot-fre py:runresult "ele-stewpot-fre"            
+  let induction-fre py:runresult "induction-fre"         
+  let gasstove-fre py:runresult "gasstove-fre" 
+  let pressure-fre py:runresult "pressure-fre"
+  let rice-fre py:runresult "rice-fre"
+  let ele-pan-fre py:runresult "ele-pan-fre" 
+  let sterilizer-fre py:runresult "sterilizer-fre"
+  let dishes-num py:runresult "dishes-num"    
+  let resultlist (list cook-fire-fre Soup-fre Cook-Energy Gasstove-time bread-machine-fre ele-oven-fre soymilk-fre ele-stewpot-fre induction-fre gasstove-fre pressure-fre rice-fre ele-pan-fre sterilizer-fre dishes-num)
+  report resultlist
+end
+
+to-report predict-cleaning-behavior
+  py:set "gender" gender
+  py:set "age" age-group
+  py:Set "education" education-level
+  py:Set "income" income-group
+  py:set "status" status
+  py:Set "num_family" number
+  py:set "num_child" count people with [hhd = [hhd] of myself and age < 18]
+  py:set "num_old" count people with [hhd = [hhd] of myself and status = 4]
+  py:set "household_income" hhd-income-group
+  (py:run
+    "import numpy as np"
+    "from sklearn.ensemble import RandomForestClassifier"
+    "seeds = 1"
+    "trees = 100"
+    "name1_data = pd.read_csv('Water Energy Consumption/cleaning behavior.csv')"
+    "features = name1_data[['gender', 'age', 'permonth_income', 'education', 'status','family_member', 'minor', 'retired','hhd_income']]"
+    "second_level_labels = name1_data[['Average numberof washes before cooking','Washing dish method','Wash hot water','Washing time','washing cycles','Cleaning method','Sweeping frequency','Mopping frequency','washing method','Frequency hand washing clothes in winter','Frequency hand washing clothes in spring','Frequency hand washing clothes in summer','Frequency washing machine use in winter','Frequency washing machine use in spring','Frequency washing machine use in summer','Rinsing method','Running laundry time','Number of times clothes are rinsed','Use hot water for laundry','Drying sterilizing clothes after washing']]"
+    "rf_second_level = RandomForestClassifier(n_estimators=trees, random_state=seeds)"
+    "rf_second_level.fit(features, second_level_labels.values.ravel())"
+    "new_data = pd.DataFrame([[gender, age, income, education, status, num_family, num_child, num_old, household_income]],columns=features.columns)"
+    "Y = rf_second_level.predict(new_data)"
+    "washes-avenum = Y[0, 0]"
+    "wash-dish-method = Y[0, 1]"
+    "Wash-hotwater = Y[0, 2]"
+    "wash-time = Y[0, 3]"
+    "wash-cycle = Y[0, 4]"
+    "Clean-method = Y[0, 5]"
+    "Sweep-fre = Y[0, 6]"
+    "Mop-fre = Y[0, 7]"
+    "wash-method = Y[0, 8]"
+    "handwash-fre-winter = Y[0, 9]"
+    "handwash-fre-spring = Y[0, 10]"
+    "handwash-fre-summer = Y[0, 11]"
+    "washmachine-fre-winter = Y[0, 12]"
+    "washmachine-fre-spring = Y[0, 13]"
+    "washmachine-fre-summer = Y[0, 14]"
+    "Rinse-method = Y[0, 15]"
+    "laundry-time = Y[0, 16]"
+    "Num-clothes-rinsed = Y[0, 17]"
+    "hotwater-laundry = Y[0, 18]"
+    "Dry-sterilize = Y[0, 19]"
+  )
+  let washes-avenum py:runresult "washes-avenum"       
+  let wash-dish-method py:runresult "wash-dish-method"            
+  let Wash-hotwater py:runresult "Wash-hotwater"         
+  let wash-time py:runresult "wash-time" 
+  let wash-cycle py:runresult "wash-cycle"
+  let Clean-method py:runresult "Clean-method"
+  let Sweep-fre py:runresult "Sweep-fre"       
+  let Mop-fre py:runresult "Mop-fre"            
+  let wash-method py:runresult "wash-method"         
+  let handwash-fre-winter py:runresult "handwash-fre-winter" 
+  let handwash-fre-spring py:runresult "handwash-fre-spring"
+  let handwash-fre-summer py:runresult "handwash-fre-summer"
+  let washmachine-fre-winter py:runresult "washmachine-fre-winter" 
+  let washmachine-fre-spring py:runresult "washmachine-fre-spring"
+  let washmachine-fre-summer py:runresult "washmachine-fre-summer"
+  let Rinse-method py:runresult "Rinse-method"
+  let laundry-time py:runresult "laundry-time"
+  let Num-clothes-rinsed py:runresult "Num-clothes-rinsed" 
+  let hotwater-laundry py:runresult "hotwater-laundry"
+  let Dry-sterilize py:runresult "Dry-sterilize"    
+  let resultlist (list washes-avenum wash-dish-method Wash-hotwater wash-time wash-cycle Clean-method Sweep-fre Mop-fre wash-method handwash-fre-winter handwash-fre-spring handwash-fre-summer washmachine-fre-winter washmachine-fre-spring washmachine-fre-summer Rinse-method laundry-time Num-clothes-rinsed hotwater-laundry Dry-sterilize)
+  report resultlist
+end
+
+to-report predict-HVAC-behavior
+  py:set "gender" gender
+  py:set "age" age-group
+  py:Set "education" education-level
+  py:Set "income" income-group
+  py:set "status" status
+  py:Set "num_family" number
+  py:set "num_child" count people with [hhd = [hhd] of myself and age < 18]
+  py:set "num_old" count people with [hhd = [hhd] of myself and status = 4]
+  py:set "household_income" hhd-income-group
+  (py:run
+    "import numpy as np"
+    "from sklearn.ensemble import RandomForestClassifier"
+    "seeds = 1"
+    "trees = 100"
+    "name1_data = pd.read_csv('Water Energy Consumption/HVAC behavior.csv')"
+    "features = name1_data[['gender', 'age', 'permonth_income', 'education', 'status','family_member', 'minor', 'retired','hhd_income']]"
+    "second_level_labels = name1_data[['Daily time air conditioner in winter','Daily time air conditioner in spring','Daily time air conditioner in summer','Air conditioning temperature in winter','Air conditioning temperature in spring','Air conditioning temperature in summer','Time heating equipment in winter']]"
+    "rf_second_level = RandomForestClassifier(n_estimators=trees, random_state=seeds)"
+    "rf_second_level.fit(features, second_level_labels.values.ravel())"
+    "new_data = pd.DataFrame([[gender, age, income, education, status, num_family, num_child, num_old, household_income]],columns=features.columns)"
+    "Y = rf_second_level.predict(new_data)"
+    "Daily-airconditioner-winter = Y[0, 0]"
+    "Daily-airconditioner-spring = Y[0, 1]"
+    "Daily-airconditioner-summer = Y[0, 2]"
+    "temp-airconditioner-winter = Y[0, 3]"
+    "temp-airconditioner-spring = Y[0, 4]"
+    "temp-airconditioner-summer = Y[0, 5]"
+    "time-heatequipment-winter = Y[0, 6]"
+  )
+  let Daily-airconditioner-winter py:runresult "Daily-airconditioner-winter"       
+  let Daily-airconditioner-spring py:runresult "Daily-airconditioner-spring"            
+  let Daily-airconditioner-summer py:runresult "Daily-airconditioner-summer"  
+  let temp-airconditioner-winter py:runresult "temp-airconditioner-winter"         
+  let temp-airconditioner-spring py:runresult "temp-airconditioner-spring" 
+  let temp-airconditioner-summer py:runresult "temp-airconditioner-summer"
+  let time-heatequipment-winter py:runresult "time-heatequipment-winter"
+  let resultlist (list Daily-airconditioner-winter Daily-airconditioner-spring Daily-airconditioner-summer temp-airconditioner-winter temp-airconditioner-spring temp-airconditioner-summer time-heatequipment-winter)
+  report resultlist
+end
