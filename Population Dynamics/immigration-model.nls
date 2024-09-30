@@ -22,7 +22,6 @@ to immigration-model
     [
       hatch 1 
       [
-        set pid (max [pid] of people + 1)
         set hhd new-hhdid
         if status = 1 and age >= 3 [find-a-school] ;学生找学校
         if status = 2 [find-a-job] ;上班族找工作
