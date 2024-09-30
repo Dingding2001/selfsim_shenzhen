@@ -174,7 +174,7 @@ to shop-location-choice
         ]
         attractiveness < T-CB-decrease
         [
-          set srent srent + R-decrease * (T-CB-decrease - attractiveness) * srent
+          set srent srent + R-decrease * (attractiveness - T-CB-decrease) * srent
           if srent < srent-min [set srent Srent-min]
           
           ;update its utility, because of rent change

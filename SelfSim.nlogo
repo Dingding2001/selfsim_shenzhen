@@ -1,26 +1,7 @@
-__includes
-[
-  "Setup/setup-agent.nls"
-  "Setup/initialization.nls"
-  "Population Dynamics/education-model.nls"
-  "Population Dynamics/income-model.nls"
-  "Population Dynamics/birth-model.nls"
-  "Population Dynamics/employ-model.nls"
-  "Population Dynamics/marriage-model.nls"
-  "Population Dynamics/update-relationship.nls"
-  "Population Dynamics/immigration-model.nls"
-  "Population Dynamics/Death-model.nls"
-  "Land Use/residence-model.nls"
-  "Land Use/school-model.nls"
-  "Land Use/shop-model.nls"
-  "Land Use/firm-model.nls"
-  "Population Dynamics/daily-plan.nls"
-  "Population Dynamics/network-model.nls"
-  "Output Data/output.nls"
-]
+__includes ["Setup/setup-agent.nls" "Setup/initialization.nls""Population Dynamics/education-model.nls""Population Dynamics/income-model.nls""Population Dynamics/birth-model.nls""Population Dynamics/employ-model.nls""Population Dynamics/marriage-model.nls""Population Dynamics/update-relationship.nls""Population Dynamics/immigration-model.nls""Population Dynamics/Death-model.nls""Land Use/residence-model.nls""Land Use/school-model.nls""Land Use/shop-model.nls""Land Use/firm-model.nls""Population Dynamics/daily-plan.nls""Population Dynamics/network-model.nls""Output Data/output.nls"]
 
 
-extensions [gis py csv profiler array table]
+extensions [gis py csv profiler]
 
 globals
 [
@@ -48,10 +29,6 @@ globals
   ;the farest location
   WorkDistance
   WorkDistanceProb
-
-  ;EV market
-  transaction-purchase ;annual housing transaction (purchasing)
-  transaction-rent ;annual housing transaction (renting)
 ]
 
 breed [people person]
@@ -61,8 +38,6 @@ breed [firms firm]
 breed [CBs CB] ;commercial building
 breed [shops shop]
 breed [OBs OB] ;office building
-breed [facility-operators facility-operator]
-breed [manufacturers manufacturer]
 
 undirected-link-breed [couples couple]
 undirected-link-breed [parents parent]
@@ -82,15 +57,12 @@ undirected-link-breed [leisures leisure]
 undirected-link-breed [cfrents cfrent] ;candidate office building to rent
 undirected-link-breed [csrents csrent] ;candidate commercial building to rent
 
-undirected-link-breed [c2stations c2station]
-undirected-link-breed [s2stations s2station]
-
 patches-own
 [
   random-n
   centroid
   ID
-  Pdistrict ;district
+  Pdistrict ;district of patch
   dem-res ;demand-residences demand of residential building in this patch (the higher the demand, the more likely to develop a new residential building
   dem-cb ;demand-residences demand of commercia in this patch (the higher the demand, the more likely to develop a new residential building
   dem-ob;demand-residences demand of commercia in this patch (the higher the demand, the more likely to develop a new residential building
@@ -113,6 +85,7 @@ people-own
   edu-year ;Years of study at the current school
   edu-year-required ;Years required    preschoolers-3 years; kindergarten-3 years; primary school-6 years; middle school-3 years; high school-3 years; polytechnic school-3 years; college-3 years; from college to bachelor-2 years; master-3 years; PHD-4 years
 
+
   status ;1-students or preschoolers 2-employees 3-unemployees 4-retirees 5-wait to be allocated a school
 
   number ;number of family members
@@ -120,7 +93,6 @@ people-own
   hhd-income-group ;1-less than 100000; 2- 100000~200000; 3- 200000~300000; 4- 300000~500000; 5- 500000~700000; 6- 700000~1000000; 7-more than 1000000
   license ;1-having a driving license； 0- not having a driving license
   traffic ;traffic expense
-
 
   ;social network attributes
   max-friend ; maximum number of friends will have
@@ -141,22 +113,12 @@ people-own
   residence-size ;current residence size
   residence-cost ;current residence cost
   current-accessibility ; accessibility of current residence
-  move ;determine whether move house this year
-
-  ;trigger type
-  marriage
-  divorce
-  birth
-  death
-  work
-  study
-  immigration
 
   ;distance between current/candidate residence and work/study location
   candidate-ws-dis
   current-ws-dis
 
-  ;daily plan (leisure and shopping)
+   ;daily plan (leisure and shopping)
   ;frequency of shopping/leisure activities
   weekday-shopping
   weekday-leisure
@@ -164,17 +126,35 @@ people-own
   weekend-leisure
 
   distance-max  ;Acceptable commuting distance
+
+  ;behaviors of energy consumption
+  daytime-temp-air ;The temperature of the air conditioner cooling setting during daytime
+  night-temp-air ;The temperature of the air conditioner cooling setting during night
+  month-cool ;Month of using air conditioner for cooling
+  weekday-hour ;Hour of using air conditioner for cooling on weekday
+  weekend-hour ;Hour of using air conditioner for cooling on weekend
+  fre-cook ;Frequency of cooking
+
+  ;appliance
+  air ;Number of air conditioner
+  bread ;Bread machine
+  electro ;Electromagnetic furnace
+  rice ;Rice cooker
+  pressure ;Pressure cooker
+  baking ;Baking pan
+  pot
+  milk ;Soy milk
+  microwave ;Microwave oven
+  led
+
 ]
 
 to setup
   clear-all
+  reset-ticks
   setup-python
-  print "setup python finished"
-
   set year 2020
   setup-agent
-  print "setup agent finished"
-
   initialization
   print "initialization finished"
   if social-network
@@ -185,40 +165,26 @@ to setup
   generate-daily-plan
   print "daily plan finished"
   ask links [hide-link]
-  reset-ticks
-  export-world (word year ".csv")
 end
 
 to setup-python
   py:setup py:python
   (py:run
-    ; dbscan python packages
-    "from sklearn.cluster import DBSCAN"
-    "from sklearn.datasets import make_blobs"
-    ; p-median python packages
-    "from itertools import product"
-;    "from gurobipy import *"
-;    "from pulp import *"
-    "import numpy as np"
-    "from math import sqrt"
     "import random"
-    "import matplotlib.pyplot as plt"
+    "import numpy as np"
     "from scipy.optimize import curve_fit"
-    "random.seed(0)"
-    "import os"
-    "from scipy.stats import gamma"
     "import pandas as pd"
-    "from sklearn.ensemble import RandomForestRegressor"
-    "from sklearn.ensemble import RandomForestClassifier"
+    "from scipy.stats import gamma"
+    "import csv"
+    "import os"
   )
 end
 
 to go
+  if year > 2021 [import-world "SelfSim.csv"]
   set labor-lastyear count people with [status = 2 or status = 3]
-  set transaction-rent 0 set transaction-purchase 0
   set year year + 1
   immigration-model
-  show count people with [count people with [relationship = 1 and hhd = [hhd] of myself] = 0]
   emigration-model
   ask people [set age age + 1]
   ask firms [set age age + 1]
@@ -231,13 +197,12 @@ to go
   death-model
   if social-network [update-friend]
   residence-model
-  firm-model
   school-model
+  firm-model
   shop-model
   ask links [hide-link]
   output-data
-  export-world (word year ".csv")
-  tick
+  export-world "SelfSim.csv"
 end
 
 to profile
@@ -249,13 +214,13 @@ to profile
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-525
-21
-1115
-322
+507
+13
+1090
+310
 -1
 -1
-1.453
+1.436
 1
 10
 1
@@ -276,10 +241,10 @@ ticks
 30.0
 
 BUTTON
-77
-21
-143
-54
+51
+26
+117
+59
 NIL
 setup
 NIL
@@ -293,10 +258,10 @@ NIL
 1
 
 BUTTON
-174
-21
-237
-54
+148
+26
+211
+59
 NIL
 go
 NIL
@@ -362,7 +327,7 @@ T-school-birth
 T-school-birth
 0
 1
-0.75
+0.7
 0.05
 1
 NIL
@@ -377,7 +342,7 @@ T-school-increase
 T-school-increase
 0
 1
-0.7
+0.8
 0.05
 1
 NIL
@@ -392,47 +357,92 @@ T-school-decrease
 T-school-decrease
 0
 1
-0.5
+0.25
 0.05
 1
 NIL
 HORIZONTAL
 
 SLIDER
-18
-478
-212
-511
-T-rent-afford
-T-rent-afford
+17
+307
+208
+340
+Loss
+Loss
 0
-1
-0.6
-0.01
+2
+1.2
+0.1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-254
-479
-443
-512
+253
+245
+436
+278
+Max-num-residences
+Max-num-residences
+0
+10
+5.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+251
+309
+438
+342
+T-flexible
+T-flexible
+0
+10
+5.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+13
+486
+207
+519
+T-rent-afford
+T-rent-afford
+0
+2
+0.5
+0.5
+1
+NIL
+HORIZONTAL
+
+SLIDER
+249
+487
+438
+520
 T-purchase-afford
 T-purchase-afford
 0
-1
-0.6
-0.01
+2
+0.8
+0.1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1043
-32
-1100
-77
+1018
+26
+1075
+71
 Year
 Year
 17
@@ -440,31 +450,31 @@ Year
 11
 
 SLIDER
-18
-538
-211
-571
+13
+546
+206
+579
 Rent-prospect
 Rent-prospect
--1000
-1000
-0.0
+0
+10
+1.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-254
-538
-444
-571
+249
+546
+439
+579
 Purchase-prospect
 Purchase-prospect
--10
+0
 10
-0.007
-0.01
+0.0
+1
 1
 NIL
 HORIZONTAL
@@ -515,10 +525,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-511
-360
-614
-405
+508
+344
+611
+389
 Number of CBs
 count CBs
 17
@@ -526,10 +536,10 @@ count CBs
 11
 
 MONITOR
-656
-360
-773
-405
+653
+344
+770
+389
 Number of shops
 count shops
 17
@@ -537,40 +547,40 @@ count shops
 11
 
 SLIDER
-920
-487
-1092
-520
+917
+471
+1089
+504
 T-shop-closure
 T-shop-closure
 0
 100
-4.0
+5.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-507
-486
-681
-519
+504
+470
+678
+503
 T-CB-increase
 T-CB-increase
 0
 100
-9.8
+10.0
 0.1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-716
-486
-888
-519
+713
+470
+885
+503
 T-CB-decrease
 T-CB-decrease
 0
@@ -631,16 +641,16 @@ MONITOR
 1649
 157
 Number of retirees
-count people with [status = 4]
+count people with [status = 3]
 17
 1
 11
 
 TEXTBOX
-60
-77
-486
-103
+67
+76
+493
+102
 ---------------------School Model-------------------------
 12
 0.0
@@ -657,10 +667,10 @@ TEXTBOX
 1
 
 TEXTBOX
-591
-336
-1068
-355
+588
+320
+1065
+339
 ----------------------Commercial Building and Shop----------------------
 12
 0.0
@@ -688,20 +698,20 @@ count OBs
 11
 
 TEXTBOX
-56
-598
-427
-650
+47
+605
+418
+657
 ---------------------Social Network--------------------
 12
 0.0
 1
 
 SLIDER
-248
-675
-448
-708
+239
+682
+439
+715
 W-age
 W-age
 0
@@ -713,10 +723,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-20
-674
-216
-707
+11
+681
+207
+714
 W-gender
 W-gender
 0
@@ -728,10 +738,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-21
-619
-215
-652
+12
+626
+206
+659
 W-education
 W-education
 0
@@ -743,10 +753,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-248
-619
-449
-652
+239
+626
+440
+659
 W-income
 W-income
 0
@@ -758,10 +768,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-507
-426
-679
-459
+504
+410
+676
+443
 W-shop-rent
 W-shop-rent
 0
@@ -773,55 +783,55 @@ NIL
 HORIZONTAL
 
 SLIDER
-716
-425
-888
-458
+713
+409
+885
+442
 W-shop-agg
 W-shop-agg
 0
 1
-0.24
+0.25
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-919
-425
-1091
-458
+916
+409
+1088
+442
 W-shop-traffic
 W-shop-traffic
 0
 1
-0.19
+0.47
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-507
-544
-682
-577
+504
+528
+679
+561
 Max-CB-rent
 Max-CB-rent
 0
 2
-0.84
+0.95
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-715
-545
-887
-578
+712
+529
+884
+562
 Min-CB-rent
 Min-CB-rent
 -1
@@ -841,7 +851,7 @@ W-res-purchase-acc
 W-res-purchase-acc
 0
 1
-0.4
+0.48
 0.01
 1
 NIL
@@ -850,23 +860,23 @@ HORIZONTAL
 SLIDER
 251
 364
-439
+438
 397
 W-res-purchase-price
 W-res-purchase-price
 0
 1
-0.6
+0.5
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-20
-723
-215
-756
+11
+730
+206
+763
 T-friend-break
 T-friend-break
 0
@@ -886,7 +896,7 @@ T-OB-increase
 T-OB-increase
 1
 5
-1.97
+2.0
 0.01
 1
 NIL
@@ -916,7 +926,7 @@ W-move-space
 W-move-space
 0
 1
-0.55
+0.5
 0.01
 1
 NIL
@@ -931,7 +941,7 @@ W-move-agg
 W-move-agg
 -1
 0
--0.09
+-0.11
 0.01
 1
 NIL
@@ -946,7 +956,7 @@ W-firm-loc-agg
 W-firm-loc-agg
 -1
 1
-0.7
+0.5
 0.01
 1
 NIL
@@ -991,7 +1001,7 @@ W-growth-size
 W-growth-size
 -1
 1
-0.2
+0.1
 0.01
 1
 NIL
@@ -1006,7 +1016,7 @@ W-growth-sizesq
 W-growth-sizesq
 -1
 1
--0.05
+-0.1
 0.01
 1
 NIL
@@ -1019,9 +1029,9 @@ SLIDER
 657
 W-growth-acc
 W-growth-acc
--1
 0
--0.05
+1
+0.5
 0.01
 1
 NIL
@@ -1036,7 +1046,7 @@ W-growth-age
 W-growth-age
 -1
 1
-0.2
+0.1
 0.01
 1
 NIL
@@ -1066,7 +1076,7 @@ T-growth-lower
 T-growth-lower
 -1
 1
--0.15
+-0.2
 0.01
 1
 NIL
@@ -1079,52 +1089,60 @@ SLIDER
 773
 T-closure
 T-closure
+0
 1
-2
-1.2
+0.8
 0.01
 1
 NIL
 HORIZONTAL
 
 SWITCH
-247
-724
-402
-757
+238
+731
+393
+764
 Social-Network
 Social-Network
 1
 1
 -1000
 
-MONITOR
-1364
-733
-1467
-778
-mean capacity
-mean [capacity] of firms
-17
+SLIDER
+18
+422
+208
+455
+W-res-rent-acc
+W-res-rent-acc
+0
 1
-11
+0.8
+0.01
+1
+NIL
+HORIZONTAL
 
-MONITOR
-1492
-732
-1574
-777
-mean staff
-mean [count in-employee-neighbors] of firms
-17
+SLIDER
+254
+424
+438
+457
+W-res-rent-price
+W-res-rent-price
+0
 1
-11
+0.2
+0.01
+1
+NIL
+HORIZONTAL
 
 BUTTON
-288
-22
-402
-55
+244
+26
+358
+59
 NIL
 setup-python
 NIL
@@ -1136,133 +1154,6 @@ NIL
 NIL
 NIL
 1
-
-PLOT
-485
-595
-1099
-890
-Social Demographic Attributes
-year
-NIL
-0.0
-11.0
-0.0
-10.0
-true
-true
-"" ""
-PENS
-"Male" 1.0 0 -16777216 true "" "plot count people with [gender = 1]"
-"Female" 1.0 0 -7500403 true "" "plot count people with [gender = 0]"
-"Students" 1.0 0 -2674135 true "" "plot count people with [status = 1 and age >= 3]"
-"Employee" 1.0 0 -955883 true "" "plot count people with [status = 2]"
-"Retiree" 1.0 0 -6459832 true "" "plot count people with [status = 4]"
-"Education-HighSchool or Below" 1.0 0 -13840069 true "" "plot count people with [education <= 5]"
-"Education-College" 1.0 0 -14835848 true "" "plot count people with [education = 6]"
-"Education-Bachelor" 1.0 0 -11221820 true "" "plot count people with [education = 7 or education = 8]"
-"Education-Master or PHD" 1.0 0 -13791810 true "" "plot count people with [education >= 9]"
-"People" 1.0 0 -13345367 true "" "plot count people"
-"Unemployee" 1.0 0 -8630108 true "" "plot count people with [status = 3]"
-"IndividualMonthlyIncome-0~5k" 1.0 0 -1184463 true "" "plot count people with [status = 2 and income <= 5000]"
-"IndividualMonthlyIncome-5~10k" 1.0 0 -10899396 true "" "plot count people with [status = 2 and income > 5000 and income <= 10000]"
-"IndividualMonthlyIncome-10~15k" 1.0 0 -5825686 true "" "plot count people with [status = 2 and income > 10000 and income <= 15000]"
-"IndividualMonthlyIncome-15~20k" 1.0 0 -2064490 true "" "plot count people with [status = 2 and income > 15000 and income <= 20000]"
-"IndividualMonthlyIncome-Above20k" 1.0 0 -16777216 true "" "plot count people with [status = 2 and income > 20000]"
-"HouseholdIncome" 1.0 0 -16777216 true "" "plot mean [hhd-income] of people with [relationship = 1]"
-
-SLIDER
-16
-419
-210
-452
-W-res-rent-acc
-W-res-rent-acc
-0
-1
-0.7
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-253
-420
-442
-453
-W-res-rent-price
-W-res-rent-price
-0
-1
-0.3
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-18
-307
-209
-340
-T-flexible-purchase
-T-flexible-purchase
-0
-10
-7.0
-1
-1
-NIL
-HORIZONTAL
-
-INPUTBOX
-237
-235
-314
-295
-Max-num-residences
-7.0
-1
-0
-Number
-
-INPUTBOX
-330
-236
-413
-296
-Loss
-1.2
-1
-0
-Number
-
-SLIDER
-251
-308
-423
-341
-T-flexible-rent
-T-flexible-rent
-0
-100
-1.0
-1
-1
-NIL
-HORIZONTAL
-
-MONITOR
-435
-243
-552
-288
-NIL
-count purchases
-17
-1
-11
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -1606,7 +1497,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.4.0
+NetLogo 6.3.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

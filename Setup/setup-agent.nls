@@ -17,6 +17,7 @@ to setup-people
 ;    let coord-tuple gis:location-of (first (first (gis:vertex-lists-of vector-feature)))
     let pid1 gis:property-value vector-feature "pid"
     let hhd1 gis:property-value vector-feature "hid"
+    ;let age1 gis:property-value vector-feature "Age"
     let age-group1 gis:property-value vector-feature "Age_group"
     let gender1 gis:property-value vector-feature  "Gender"
     let income1  gis:property-value vector-feature "Income"
@@ -50,7 +51,7 @@ to setup-people
         [set age 65 + random 35]
        ) 
       set Gender gender1
-      set Income income1
+      set Income income1 / 12
       set License license1
       set number number1
       set education-level education1
@@ -75,7 +76,7 @@ to setup-people
   [
     set size 0.5
     set color white
-    set hhd-income 12 * sum [income] of people with [hhd = [hhd] of myself] 
+    set hhd-income sum [income] of people with [hhd = [hhd] of myself]
   ]
 end
 

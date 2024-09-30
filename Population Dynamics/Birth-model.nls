@@ -1,5 +1,5 @@
 to birth-model
-  ;20~24岁女性生育
+  ;Women aged 20 to 24 giving birth
   let n1 0
   (ifelse 
     year = 2021 [set n1 round (0.11 * item 0 Nbirth / 1000)]
@@ -15,7 +15,7 @@ to birth-model
     year = 2031 [set n1 round (0.11 * item 10 Nbirth / 1000)]
     [set n1 round (0.11 * item 11 Nbirth / 1000)]
   )
-  ask n-of n1 people with [gender = 0 and count in-couple-neighbors = 1 and age >= 20 and age <= 24 ] ;找到母亲
+  ask n-of n1 people with [gender = 0 and count in-couple-neighbors = 1 and age >= 20 and age <= 24 ]
   [
     ask one-of people with [hhd = [hhd] of myself and relationship = 1] [set flexible flexible + 1]
     let ft one-of people with [couple-neighbor? myself]
@@ -52,7 +52,7 @@ to birth-model
     ask people with [hhd = [hhd] of myself ][set number number + 1]
   ]
   
-  ;25~29岁妇女生育
+  ;Women aged 25 to 29 giving birth
   let n2 0
   (ifelse 
     year = 2021 [set n2 round (0.35 * item 0 Nbirth / 1000)]
@@ -68,7 +68,7 @@ to birth-model
     year = 2031 [set n2 round (0.35 * item 10 Nbirth / 1000)]
     [set n2 round (0.35 * item 11 Nbirth / 1000)]
   )
-  ask n-of n2 people with [gender = 0 and count in-couple-neighbors = 1 and age >= 25 and age <= 29] ;找到母亲
+  ask n-of n2 people with [gender = 0 and count in-couple-neighbors = 1 and age >= 25 and age <= 29] 
   [
     ask one-of people with [hhd = [hhd] of myself and relationship = 1] [set flexible flexible + 1]
     let ft one-of people with [couple-neighbor? myself]
@@ -103,7 +103,7 @@ to birth-model
     ]
   ]
   
-  ;30~34岁妇女生育
+  ;Women aged 30 to 34 giving birth
   let n3 0
   (ifelse 
     year = 2021 [set n3 round (0.37 * item 0 Nbirth / 1000)]
@@ -119,7 +119,7 @@ to birth-model
     year = 2031 [set n3 round (0.37 * item 10 Nbirth / 1000)]
     [set n3 round (0.37 * item 11 Nbirth / 1000)]
   )
-  ask n-of n3 people with [gender = 0 and count in-couple-neighbors = 1 and age >= 30 and age <= 34] ;找到母亲
+  ask n-of n3 people with [gender = 0 and count in-couple-neighbors = 1 and age >= 30 and age <= 34] 
   [
     ask one-of people with [hhd = [hhd] of myself and relationship = 1] [set flexible flexible + 1]
     let ft one-of people with [couple-neighbor? myself]
@@ -154,7 +154,7 @@ to birth-model
     ]
   ]
   
-  ;35~39
+  ;Women aged 35 to 39 giving birth
   let n4 0
   (ifelse 
     year = 2021 [set n4 round (0.14 * item 0 Nbirth / 1000)]
@@ -170,7 +170,7 @@ to birth-model
     year = 2031 [set n4 round (0.14 * item 10 Nbirth / 1000)]
     [set n4 round (0.14 * item 11 Nbirth / 1000)]
   )
-  ask n-of n4 people with [gender = 0 and count in-couple-neighbors = 1 and age >= 35 and age <= 39] ;找到母亲
+  ask n-of n4 people with [gender = 0 and count in-couple-neighbors = 1 and age >= 35 and age <= 39] 
   [
     ask one-of people with [hhd = [hhd] of myself and relationship = 1] [set flexible flexible + 1]
     let ft one-of people with [couple-neighbor? myself]
@@ -205,7 +205,7 @@ to birth-model
     ]
   ]
   
-  ;40~44岁妇女生育孩子
+  ;Women aged 40 to 44 giving birth
   let n5 0
   (ifelse 
     year = 2021 [set n5 round (0.03 * item 0 Nbirth / 1000)]
@@ -221,7 +221,7 @@ to birth-model
     year = 2031 [set n5 round (0.03 * item 10 Nbirth / 1000)]
     [set n5 round (0.03 * item 11 Nbirth / 1000)]
   )
-  ask n-of n5 people with [gender = 0 and count in-couple-neighbors = 1 and age >= 40 and age <= 44] ;找到母亲
+  ask n-of n5 people with [gender = 0 and count in-couple-neighbors = 1 and age >= 40 and age <= 44] 
   [
     ask one-of people with [hhd = [hhd] of myself and relationship = 1] [set flexible flexible + 1]
     let ft one-of people with [couple-neighbor? myself]

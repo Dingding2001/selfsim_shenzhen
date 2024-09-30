@@ -6,15 +6,17 @@ to income-model
   ;Step 1
   let mean-income 0
   (ifelse 
-    year = 2021 [set mean-income round (item 0 MeanIncome)]
-    year = 2022 [set mean-income round (item 1 MeanIncome)]
-    year = 2023 [set mean-income round (item 2 MeanIncome)]
-    year = 2024 [set mean-income round (item 3 MeanIncome)]
-    year = 2025 [set mean-income round (item 4 MeanIncome)]
-    year = 2026 [set mean-income round (item 5 MeanIncome)]
-    year = 2027 [set mean-income round (item 6 MeanIncome)]
-    year = 2028 [set mean-income round (item 7 MeanIncome)]
-    year = 2029 [set mean-income round (item 8 MeanIncome)]
+    year = 2019 [set mean-income round (item 0 MeanIncome)]
+    year = 2020 [set mean-income round (item 1 MeanIncome)]
+    year = 2021 [set mean-income round (item 2 MeanIncome)]
+    year = 2022 [set mean-income round (item 3 MeanIncome)]
+    year = 2023 [set mean-income round (item 4 MeanIncome)]
+    year = 2024 [set mean-income round (item 5 MeanIncome)]
+    year = 2025 [set mean-income round (item 6 MeanIncome)]
+    year = 2026 [set mean-income round (item 7 MeanIncome)]
+    year = 2027 [set mean-income round (item 8 MeanIncome)]
+    year = 2028 [set mean-income round (item 9 MeanIncome)]
+    year = 2029 [set mean-income round (item 10 MeanIncome)]
     [set mean-income round (item 11 MeanIncome)]
   )
   
